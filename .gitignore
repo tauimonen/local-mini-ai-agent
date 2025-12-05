@@ -1,0 +1,49 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+dist/
+build/
+pip-wheel-metadata/
+
+# Virtual environments (uv, venv, etc.)
+.venv/
+venv/
+env/
+.uv/
+
+# Compiled / temporary files
+*.log
+*.tmp
+*.temp
+*.DS_Store
+Thumbs.db
+
+# Cache folders
+.cache/
+.mypy_cache/
+.pytest_cache/
+ipynb_checkpoints/
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+*.ipynb_checkpoints
+.ipynb_checkpoints/
+
+# UV specific data
+.uv/
+uv.lock
+
+# --- Project-specific (optional) ---
+# Ollama models or large data files you may generate
+models/
+data/
