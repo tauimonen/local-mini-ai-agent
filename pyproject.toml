@@ -1,0 +1,12 @@
+[project]
+name = "local-ai-agent"
+version = "0.1.0"
+description = "Local AI agent using Ollama"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "requests==2.31.0",
+]
+
+[tool.uv]
