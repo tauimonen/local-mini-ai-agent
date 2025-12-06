@@ -26,6 +26,9 @@ Open PowerShell **as Administrator** and run:
 ```powershell
 netsh advfirewall firewall add rule name="Ollama 11434" dir=in action=allow protocol=TCP localport=11434
 ```
+```powershell
+netsh interface portproxy add v4tov4 listenport=11434 listenaddress=0.0.0.0 connectport=11434 connectaddress=192.168.101.100
+```
 
 ### 2. (Optional) Remove old portproxy rules
 ```powershell
