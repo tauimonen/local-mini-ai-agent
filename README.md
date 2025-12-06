@@ -17,9 +17,9 @@ Everything runs offline, as long as Ollama and the selected model are installed 
 - File read/write operations restricted to the project directory
 - Easily extensible with new tools
 
+--
 ## Running Ollama on Windows and Connecting from WSL
 This guide assumes Ollama is installed on Windows and you want to run your Python program in WSL (Ubuntu) while connecting to Ollama.
----
 
 ### 1. Allow Ollama port 11434 through Windows Firewall
 Open PowerShell **as Administrator** and run:
