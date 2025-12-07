@@ -46,7 +46,7 @@ class Agent:
     4. Repeat until done or max iterations reached
     """
     
-    def __init__(self, model: str = "llama3.2:3b", max_iterations: int = 2):
+    def __init__(self, model: str = "llama3.2:3b", max_iterations: int = 5):
         """
         Initialize the agent.
         Args:

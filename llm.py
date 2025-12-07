@@ -1,20 +1,31 @@
+"""
+LLM Module - Ollama Client
+
+Handles communication with the local Ollama server.
+Ollama must be installed and running for this to work.
+"""
+
 import requests
 from typing import List, Dict
+import os
 
 class OllamaClient:
     """
-    A client for local Ollama API.
+    A client for local Ollama API. Default endpoint is http://localhost:11434.
     """
     def __init__(self, model: str = "llama3.2:3b", base_url: str = "http://192.168.101.100:11434"):
         """
         Initialize the Ollama client.
         Args:
             model: The model name (must be pulled in Ollama first)
-            base_url: Ollama server URL
+            base_url: Ollama server URL (defaults to env var or localhost)
         """
         self.model = model
+        # Support Docker environment
+        if base_url is None:
+            base_url = os.getenv("OLLAMA_HOST", "http://localhost:11434")
         self.base_url = base_url
-        self.api_url = f"{self.base_url}/api/chat"
+        self.api_url = f"{base_url}/api/chat"
         
         # Verify Ollama is running
         self._check_connection()
@@ -27,7 +38,7 @@ class OllamaClient:
             print(f"Connected to Ollama at {self.base_url}")
         except requests.exceptions.RequestException as e:
             print(f"Cannot connect to Ollama at {self.base_url}")
-            print(f"Make sure Ollama is running: ollama serve")
+            print(f"Make sure Ollama is running.")
             raise ConnectionError(f"Ollama connection failed: {e}")
         
     
