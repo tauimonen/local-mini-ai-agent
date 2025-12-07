@@ -1,4 +1,6 @@
-# Simple Local AI Agent
+[![Project Status: Work in Progress](https://img.shields.io/badge/Project%20Status-Work%20in%20Progress-orange.svg)](https://img.shields.io/badge/Project%20Status-Work%20in%20Progress-orange.svg)
+
+# Local AI Agent
 
 This project is a lightweight ReAct-style AI agent that uses a fully local LLM through Ollama (e.g., llama3.2:3b).
 
@@ -21,25 +23,20 @@ Everything runs offline, as long as Ollama and the selected model are installed 
 ## Running Ollama on Windows and Connecting from WSL
 This guide assumes Ollama is installed on Windows and you want to run your Python program in WSL (Ubuntu) while connecting to Ollama.
 
-### 1. Allow Ollama port 11434 through Windows Firewall
-Open PowerShell **as Administrator** and run:
+### 1. Start Ollama 
+```powershell
+.\ollama.exe serve
+```
+
+### 2. Allow Ollama port 11434 through Windows Firewall
+Open PowerShell as Administrator and run:
 ```powershell
 netsh advfirewall firewall add rule name="Ollama 11434" dir=in action=allow protocol=TCP localport=11434
 ```
+
+### 3. Forward all TCP traffic arriving at any interface on Windows port 11434 to 192.168.101.100:11434, allowing access to a service running on that IP through the Windows machine.
 ```powershell
 netsh interface portproxy add v4tov4 listenport=11434 listenaddress=0.0.0.0 connectport=11434 connectaddress=192.168.101.100
-```
-
-### 2. (Optional) Remove old portproxy rules
-```powershell
-netsh interface portproxy reset
-```
-
-### 3. Start or restart the Ollama service
-You can restart the Windows Ollama service:
-```powershell
-net stop Ollama
-net start Ollama
 ```
 
 ### 4. Test Ollama from Windows

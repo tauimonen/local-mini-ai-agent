@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Ollama LLM server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_server
+    ports:
+      - "11434:11434"
+    volumes:
+      # Persist model downloads
+      - ollama_data:/root/.ollama
+    # GPU support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # AI Agent application
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_agent
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount current directory for file operations
+      - ./data:/app/data
+      # Mount source code for development (optional, comment out for production)
+      - ./agent.py:/app/agent.py
+      - ./llm.py:/app/llm.py
+      - ./main.py:/app/main.py
+      - ./tools:/app/tools
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+    driver: local
