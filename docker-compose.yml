@@ -19,10 +19,11 @@ services:
     #           count: 1
     #           capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD-SHELL", "pgrep ollama || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s  # Anna 30s aikaa käynnistyä
     restart: unless-stopped
 
   # AI Agent application

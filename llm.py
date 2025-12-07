@@ -13,7 +13,7 @@ class OllamaClient:
     """
     A client for local Ollama API. Default endpoint is http://localhost:11434.
     """
-    def __init__(self, model: str = "llama3.2:3b", base_url: str = "http://192.168.101.100:11434"):
+    def __init__(self, model: str = "llama3.2:3b", base_url: str = None):
         """
         Initialize the Ollama client.
         Args:
@@ -24,8 +24,9 @@ class OllamaClient:
         # Support Docker environment
         if base_url is None:
             base_url = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        self.base_url = base_url
-        self.api_url = f"{base_url}/api/chat"
+
+        self.base_url = base_url.rstrip("/")
+        self.api_url = f"{self.base_url}/api/chat"
         
         # Verify Ollama is running
         self._check_connection()

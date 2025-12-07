@@ -8,9 +8,14 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy pyproject.toml and install dependencies
+COPY pyproject.toml ./
+# If you have poetry.lock, copy it too (optional but recommended)
+# COPY poetry.lock ./
+
+# Install dependencies using pip (reads pyproject.toml)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
 
 # Copy application code
 COPY agent.py llm.py main.py ./
