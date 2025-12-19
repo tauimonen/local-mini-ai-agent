@@ -1,34 +1,26 @@
 #!/bin/bash
-set -e
 
 echo "Starting AI Agent container..."
-echo "Ollama host: ${OLLAMA_HOST}"
+echo "Ollama host: ${OLLAMA_HOST:-http://ollama:11434}"
 
-# Wait for Ollama to be ready
-echo "Waiting for Ollama to be ready..."
-until curl -sf "${OLLAMA_HOST}/api/tags" > /dev/null 2>&1; do
-    echo "   Waiting for Ollama..."
+# Wait until Ollama server is ready
+MAX_ATTEMPTS=30
+attempt=1
+while ! curl -sf "${OLLAMA_HOST}/api/tags" > /dev/null 2>&1; do
+    echo "Waiting for Ollama... (attempt $attempt/$MAX_ATTEMPTS)"
+    attempt=$((attempt + 1))
+    if [ $attempt -gt $MAX_ATTEMPTS ]; then
+        echo "Warning: Ollama not responding. Container will stay alive for debugging."
+        tail -f /dev/null
+    fi
     sleep 2
 done
-echo "✓ Ollama is ready!"
+echo "Ollama is ready!"
 
-# Check if model is already downloaded
-echo "Checking for llama3.2:3b model..."
-if curl -sf "${OLLAMA_HOST}/api/tags" | grep -q "llama3.2:3b"; then
-    echo "✓ Model already downloaded"
-else
-    echo "Downloading llama3.2:3b model (this may take a few minutes)..."
-    curl -X POST "${OLLAMA_HOST}/api/pull" \
-        -H "Content-Type: application/json" \
-        -d '{"name": "llama3.2:3b"}' \
-        --no-buffer
-    echo "✓ Model downloaded successfully"
-fi
-
-# Create example file if it doesn't exist
+# Copy project root example.txt to /app/data if it doesn't exist
 if [ ! -f /app/data/example.txt ]; then
-    echo "Creating example.txt..."
-    echo "Hello from Docker! This is a test file for the AI agent." > /app/data/example.txt
+    echo "Copying example.txt to data folder..."
+    cp /app/example.txt /app/data/example.txt
 fi
 
 echo ""
@@ -36,5 +28,8 @@ echo "Starting AI Agent..."
 echo "================================"
 echo ""
 
-# Run the agent
-exec python main.py
+# Run the agent and keep container alive if it crashes
+python -u main.py || {
+    echo "Agent crashed! Keeping container alive for debugging..."
+    tail -f /dev/null
+}

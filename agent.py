@@ -125,13 +125,9 @@ class Agent:
             "role": "user",
             "content": query
         })
-        
-        print(f"\nStarting agent loop...")
-        
+                
         # Agent reasoning loop
         for iteration in range(self.max_iterations):
-            print(f"\n--- Iteration {iteration + 1}/{self.max_iterations} ---")
-            
             # Get LLM's response
             response = self.llm.generate(
                 system_prompt=self.system_prompt,

@@ -8,41 +8,42 @@ Ollama must be installed and running for this to work.
 import requests
 from typing import List, Dict
 import os
+import json
+import time
 
 class OllamaClient:
     """
-    A client for local Ollama API. Default endpoint is http://localhost:11434.
+    A client for local Ollama API. Uses Docker service name 'ollama' by default.
     """
     def __init__(self, model: str = "llama3.2:3b", base_url: str = None):
         """
         Initialize the Ollama client.
         Args:
             model: The model name (must be pulled in Ollama first)
-            base_url: Ollama server URL (defaults to env var or localhost)
+            base_url: Ollama server URL (defaults to OLLAMA_HOST env var or Docker service name)
         """
         self.model = model
-        # Support Docker environment
-        if base_url is None:
-            base_url = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
-        self.base_url = base_url.rstrip("/")
+        # Use environment variable OLLAMA_HOST if provided, else default to Docker service name
+        self.base_url = (base_url or os.getenv("OLLAMA_HOST", "http://ollama:11434")).rstrip("/")
         self.api_url = f"{self.base_url}/api/chat"
-        
-        # Verify Ollama is running
+
+        # Try to verify connection but do not crash container
         self._check_connection()
-        
+
     def _check_connection(self):
-        """Check if Ollama server is accessible."""
-        try:
-            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
-            response.raise_for_status()
-            print(f"Connected to Ollama at {self.base_url}")
-        except requests.exceptions.RequestException as e:
-            print(f"Cannot connect to Ollama at {self.base_url}")
-            print(f"Make sure Ollama is running.")
-            raise ConnectionError(f"Ollama connection failed: {e}")
-        
-    
+        """Check if Ollama server is accessible, retry until success."""
+        for attempt in range(10):  # Try 10 times
+            try:
+                response = requests.get(f"{self.base_url}/api/tags", timeout=5)
+                response.raise_for_status()
+                print(f"Connected to Ollama at {self.base_url}")
+                return
+            except requests.exceptions.RequestException as e:
+                print(f"Cannot connect to Ollama at {self.base_url}, attempt {attempt+1}/10")
+                time.sleep(2)
+        print(f"Warning: Could not connect to Ollama at {self.base_url}. The container will stay alive for debugging.")
+
     def generate(self, system_prompt: str, messages: List[Dict[str, str]]) -> str:
         """
         Generate a response from the LLM.
@@ -52,38 +53,22 @@ class OllamaClient:
         Returns:
             The LLM's response text
         """
-        # Build the full message list with system prompt
-        full_messages = [
-            {"role": "system", "content": system_prompt}
-        ] + messages
-        
-        # Prepare the request payload
+        full_messages = [{"role": "system", "content": system_prompt}] + messages
+
         payload = {
             "model": self.model,
             "messages": full_messages,
-            "stream": False,  # Get complete response at once
+            "stream": False,
             "options": {
-                "temperature": 0.1,  # Low temperature for more deterministic output
+                "temperature": 0.1,
             }
         }
-        
+
         try:
-            # Make the API request
-            response = requests.post(
-                self.api_url,
-                json=payload,
-                timeout=60  # LLMs can take time to respond
-            )
+            response = requests.post(self.api_url, json=payload, timeout=60)
             response.raise_for_status()
-            
-            # Parse the response
             result = response.json()
             return result["message"]["content"]
-            
-        except requests.exceptions.Timeout:
-            raise TimeoutError("LLM request timed out after 60 seconds")
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f"LLM request failed: {e}")
-        except (KeyError, json.JSONDecodeError) as e:
-            raise ValueError(f"Invalid response format from LLM: {e}")
-        
+        except Exception as e:
+            print(f"Error generating LLM response: {e}")
+            return "Error: LLM request failed"

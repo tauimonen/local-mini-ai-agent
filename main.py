@@ -22,27 +22,25 @@ def main():
     agent = Agent(model="llama3.2:3b", max_iterations=5)
     
     # Example queries to demonstrate different tools
-    queries = [
-        "What is 25 multiplied by 47?",
-        "Read the file example.txt and tell me what it contains",
-        "Calculate the result of (15 + 23) * 2, then save it to result.txt"
-    ]
+    # queries = [
+    #     "What is 25 multiplied by 47?",
+    #     "Read the file example.txt and tell me what it contains",
+    #     "Calculate the result of (15 + 23) * 2, then save it to result.txt"
+    # ]
     
-    # Run each query
-    for i, query in enumerate(queries, 1):
-        print(f"\n{'='*60}")
-        print(f"Query {i}: {query}")
-        print('='*60)
-        
-        try:
-            result = agent.run(query)
-            print(f"\n✓ Final Answer: {result}")
-        except Exception as e:
-            print(f"\n✗ Error: {e}")
-        
-        if i < len(queries):
-            input("\nPress Enter to continue...")
+    query = "Read the file example.txt and tell me what it contains"
     
+    # Run query
+    print(f"\n{'='*60}")
+    print(f"Query: {query}")
+    print("Thinking... please wait."))
+        
+    try:
+        result = agent.run(query)
+        print(f"\n✓ Final Answer: {result}")
+    except Exception as e:
+        print(f"\n✗ Error: {e}")
+        
     print("\n\nAgent session completed!")
 
 
