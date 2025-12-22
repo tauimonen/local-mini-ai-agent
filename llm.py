@@ -1,74 +1,54 @@
 """
 LLM Module - Ollama Client
-
-Handles communication with the local Ollama server.
-Ollama must be installed and running for this to work.
+Uses the Ollama HTTP API to interact with local LLM models.
 """
 
 import requests
 from typing import List, Dict
 import os
 import json
-import time
 
 class OllamaClient:
-    """
-    A client for local Ollama API. Uses Docker service name 'ollama' by default.
-    """
     def __init__(self, model: str = "llama3.2:3b", base_url: str = None):
-        """
-        Initialize the Ollama client.
-        Args:
-            model: The model name (must be pulled in Ollama first)
-            base_url: Ollama server URL (defaults to OLLAMA_HOST env var or Docker service name)
-        """
         self.model = model
-
-        # Use environment variable OLLAMA_HOST if provided, else default to Docker service name
-        self.base_url = (base_url or os.getenv("OLLAMA_HOST", "http://ollama:11434")).rstrip("/")
+        if base_url is None:
+            base_url = os.getenv("OLLAMA_HOST", "http://ollama:11434")
+        self.base_url = base_url.rstrip("/")
         self.api_url = f"{self.base_url}/api/chat"
 
-        # Try to verify connection but do not crash container
+        # Check if Ollama server is accessible
         self._check_connection()
 
     def _check_connection(self):
-        """Check if Ollama server is accessible, retry until success."""
-        for attempt in range(10):  # Try 10 times
-            try:
-                response = requests.get(f"{self.base_url}/api/tags", timeout=5)
-                response.raise_for_status()
-                print(f"Connected to Ollama at {self.base_url}")
-                return
-            except requests.exceptions.RequestException as e:
-                print(f"Cannot connect to Ollama at {self.base_url}, attempt {attempt+1}/10")
-                time.sleep(2)
-        print(f"Warning: Could not connect to Ollama at {self.base_url}. The container will stay alive for debugging.")
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            response.raise_for_status()
+            print(f"Connected to Ollama at {self.base_url}")
+        except requests.exceptions.RequestException as e:
+            print(f"Cannot connect to Ollama at {self.base_url}")
+            raise ConnectionError(f"Ollama connection failed: {e}")
 
     def generate(self, system_prompt: str, messages: List[Dict[str, str]]) -> str:
         """
-        Generate a response from the LLM.
-        Args:
-            system_prompt: System instructions for the LLM
-            messages: List of conversation messages (role + content)
-        Returns:
-            The LLM's response text
+        Generate a response from the LLM using the HTTP API.
         """
         full_messages = [{"role": "system", "content": system_prompt}] + messages
-
         payload = {
             "model": self.model,
             "messages": full_messages,
             "stream": False,
-            "options": {
-                "temperature": 0.1,
-            }
+            "options": {"temperature": 0.1},
         }
 
         try:
             response = requests.post(self.api_url, json=payload, timeout=60)
             response.raise_for_status()
             result = response.json()
+            # Ollama 0.13.1 returns content under ["message"]["content"]
             return result["message"]["content"]
-        except Exception as e:
-            print(f"Error generating LLM response: {e}")
-            return "Error: LLM request failed"
+        except requests.exceptions.Timeout:
+            raise TimeoutError("LLM request timed out after 60 seconds")
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"LLM request failed: {e}")
+        except (KeyError, json.JSONDecodeError) as e:
+            raise ValueError(f"Invalid response format from LLM: {e}")

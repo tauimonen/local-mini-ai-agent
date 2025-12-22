@@ -33,13 +33,13 @@ def main():
     # Run query
     print(f"\n{'='*60}")
     print(f"Query: {query}")
-    print("Thinking... please wait."))
+    print("Thinking... please wait.")
         
     try:
         result = agent.run(query)
-        print(f"\n✓ Final Answer: {result}")
+        print(f"\nFinal Answer: {result}")
     except Exception as e:
-        print(f"\n✗ Error: {e}")
+        print(f"\nError: {e}")
         
     print("\n\nAgent session completed!")
 

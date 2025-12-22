@@ -1,35 +1,30 @@
-FROM python:3.11-slim
+FROM ollama/ollama:0.13.1
 
 WORKDIR /app
 
-# Asenna curl
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Install Python + venv + pip
+RUN apt-get update && \
+    apt-get install -y python3 python3-venv python3-pip curl && \
+    rm -rf /var/lib/apt/lists/*
 
-<<<<<<< HEAD
-# Copy pyproject.toml and install dependencies
-COPY pyproject.toml ./
-# If you have poetry.lock, copy it too (optional but recommended)
-# COPY poetry.lock ./
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Install dependencies using pip (reads pyproject.toml)
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
-=======
-# Kopioi ja asenna Python-dependencies
+# Install Python dependencies
 COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir .
->>>>>>> 2f649a0 (Make agent container stable in Docker/WSL and handle example.txt correctly)
 
-# Kopioi sovelluskoodi
-COPY agent.py llm.py main.py ./ 
+# Copy app code
+COPY agent.py llm.py main.py ./
 COPY tools/ ./tools/
 
-# Luo data-hakemisto
+# Create data directory
 RUN mkdir -p /app/data
 
-# Kopioi entrypoint
+# Copy entrypoint
 COPY docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
 
-# ENTRYPOINT pitää konttisi käynnissä
+# Start agent
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

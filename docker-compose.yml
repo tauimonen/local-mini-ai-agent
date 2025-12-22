@@ -2,44 +2,45 @@ version: '3.8'
 
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.13.1
     container_name: ollama_server
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-<<<<<<< HEAD
-    # GPU support (uncomment if you have NVIDIA GPU)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
     healthcheck:
       test: ["CMD-SHELL", "pgrep ollama || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s  # Anna 30s aikaa käynnistyä
-=======
->>>>>>> 2f649a0 (Make agent container stable in Docker/WSL and handle example.txt correctly)
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G 
     restart: unless-stopped
 
   agent:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ai_agent
     depends_on:
-      - ollama
+      ollama:
+        condition: service_healthy
     environment:
-      - OLLAMA_HOST=http://ollama:11434  # <-- Use service name, not host IP
+      - OLLAMA_HOST=http://ollama:11434
       - PYTHONUNBUFFERED=1
     volumes:
       - ./data:/app/data
+      - ./example.txt:/app/example.txt:ro
     stdin_open: true
     tty: true
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G  
+    # restart: unless-stopped
 
 volumes:
   ollama_data:
